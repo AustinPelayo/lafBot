@@ -1,0 +1,234 @@
+
+#include <SoftwareSerial.h>
+#include <ArduinoBlue.h>
+
+// Bluetooth TX -> Arduino D8
+const int BLUETOOTH_TX = 8;
+// Bluetooth RX -> Arduino D7
+const int BLUETOOTH_RX = 7;
+
+SoftwareSerial bluetooth(BLUETOOTH_TX, BLUETOOTH_RX);
+ArduinoBlue phone(bluetooth); // pass reference of bluetooth object to ArduinoBlue constructor
+
+//Initializing Motor Pins
+int RPIN1 = 3;
+int RPIN2 = 5;
+int LPIN1 = 6;
+int LPIN2 = 9;
+
+//Controls Setup
+int throttle, steering, sliderVal, button, sliderId;
+
+void setup() {
+  // Begin the Serial at 9600 Baud
+  Serial.begin(9600);
+  bluetooth.begin(9600);
+  delay(100);
+
+  //Declare motor pins as an output
+  pinMode(RPIN1, OUTPUT);
+  pinMode(RPIN2, OUTPUT);
+  pinMode(LPIN1, OUTPUT);
+  pinMode(LPIN2, OUTPUT);
+
+  Serial.println("setup complete");
+}
+
+void serialWrite(String input)
+{
+  if (input != "")
+  {
+    Serial.println("Your String: " + input);
+
+    for (int i = 0; i < input.length(); i++) {
+
+      char myChar = input.charAt(i);
+
+      for (int i = 7; i >= 0; i--) {
+        byte bytes = bitRead(myChar, i);
+        Serial.print(bytes, BIN);
+      }
+      byte buffer[input.length() + 1];
+      Serial.write(buffer, 10);
+
+
+    }
+
+
+    Serial.print("You typed: " );
+    Serial.println(input);
+
+  }
+  delay(1000);
+
+}
+
+String bleStr()
+{
+  String str = phone.getText();
+  if (str != "")
+    Serial.println(str);
+  return str;
+}
+
+int getButtonID()
+{
+  button = phone.getButton();
+  if (button != -1) {
+    Serial.print("Button: ");
+    Serial.println(button);
+    return button;
+  }
+  return -1;
+}
+
+void joyStickControl()
+{
+  // 49 and 49 is center
+  throttle = phone.getThrottle();
+  steering = phone.getSteering();
+
+  analogWrite(RPIN1, throttle/99);
+  analogWrite(RPIN2, throttle/99);
+  analogWrite(LPIN1, steering/99);
+  analogWrite(LPIN2, steering/99);
+  delay(5);
+
+  Serial.println(throttle); // Y axis
+  Serial.println(steering); // X axis
+  delay(1000);
+}
+
+
+
+void moveForward()
+{
+  Serial.println("Going Forward");
+  digitalWrite(3, HIGH);
+  delay(1000);
+
+  digitalWrite(10, LOW);
+  delay(1000);
+
+  digitalWrite(6, HIGH);
+  delay(1000);
+
+  digitalWrite(11, LOW);
+  delay(1000);
+}
+
+void moveBackward()
+{
+  Serial.println("Going Backwards");
+  digitalWrite(3, HIGH);
+  delay(1000);
+
+  digitalWrite(10, LOW);
+  delay(1000);
+
+  digitalWrite(6, HIGH);
+  delay(1000);
+
+  digitalWrite(11, LOW);
+  delay(1000);
+}
+
+void moveLeft()
+{
+  Serial.println("Going Left");
+  digitalWrite(3, HIGH);
+  delay(1000);
+
+  digitalWrite(10, LOW);
+  delay(1000);
+
+  digitalWrite(6, HIGH);
+  delay(1000);
+
+  digitalWrite(11, LOW);
+  delay(1000);
+}
+
+void moveRight()
+{
+  Serial.println("Going Right");
+  digitalWrite(3, HIGH);
+  delay(1000);
+
+  digitalWrite(10, LOW);
+  delay(1000);
+
+  digitalWrite(6, HIGH);
+  delay(1000);
+
+  digitalWrite(11, LOW);
+  delay(1000);
+}
+
+void slowInToStop()
+{
+  for (int i = 255; i >= 0; i--)
+  {
+    analogWrite(RPIN1, i);
+    analogWrite(RPIN2, i);
+    analogWrite(LPIN1, i);
+    analogWrite(LPIN2, i);
+    delay(5);
+  }
+}
+
+void moveToFullSpeed()
+{
+  for (int i = 0; i < 255; i++)
+  {
+    analogWrite(RPIN1, i);
+    analogWrite(RPIN2, i);
+    analogWrite(LPIN1, i);
+    analogWrite(LPIN2, i);
+    delay(5);
+  }
+}
+
+
+void loop() {
+  //serialWrite(ble());
+
+  //Joy Stick Access
+  //joyStickControl();
+
+  //Button Access
+  int x = getButtonID();
+  
+  //Forward
+  if (bleStr().equals("forward") || bleStr().equals("Forward") || x == 1)
+  {
+    moveToFullSpeed();
+    moveForward();
+    slowInToStop();
+  }
+
+  //Backward
+  if (bleStr().equals("backward") || bleStr().equals("Backward") || x == 2)
+  {
+    moveToFullSpeed();
+    moveBackward();
+    slowInToStop();
+  }
+
+  //Left
+  if (bleStr().equals("left") || bleStr().equals("Left") || x == 3)
+  {
+    moveToFullSpeed();
+    moveLeft();
+    slowInToStop();
+  }
+
+  //Right
+  if (bleStr().equals("right") || bleStr().equals("Right") || x == 4)
+  {
+    moveToFullSpeed();
+    moveRight();
+    slowInToStop();
+  }
+}
+
